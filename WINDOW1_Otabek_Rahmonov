@@ -1,0 +1,27 @@
+-- Common Table Expression (CTE) to calculate total sales, sales rank, and extract sales year
+WITH RankedCustomers AS (
+    SELECT
+        customer_id,
+        channel,
+        EXTRACT(YEAR FROM order_date) AS sales_year,
+        SUM(sales_amount) AS total_sales,
+        RANK() OVER (PARTITION BY channel, EXTRACT(YEAR FROM order_date) ORDER BY SUM(sales_amount) DESC) AS sales_rank
+    FROM
+        sh.backup.sales
+    WHERE
+        EXTRACT(YEAR FROM order_date) IN (1998, 1999, 2001)
+    GROUP BY
+        customer_id, channel, sales_year
+)
+
+-- Main Query to retrieve results
+SELECT
+    customer_id,
+    channel,
+    sales_year,
+    ROUND(total_sales, 2) AS formatted_total_sales, -- Display total sales with two decimal places
+    sales_rank
+FROM
+    RankedCustomers
+WHERE
+    sales_rank <= 300;
